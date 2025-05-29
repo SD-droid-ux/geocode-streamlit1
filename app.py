@@ -3,7 +3,7 @@ import requests
 import time
 
 # 🔑 Substitua pela sua chave da OpenCage
-OPENCAGE_KEY = "SUA_CHAVE_DO_OPENCAGE"
+OPENCAGE_KEY = "6fee265fdab948b1a1d740bead306441"
 
 st.set_page_config(page_title="Geocodificação Reversa com OpenCage", layout="centered")
 st.title("🔁 Geocodificação Reversa com OpenCage")
