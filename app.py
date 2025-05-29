@@ -1,7 +1,8 @@
 import streamlit as st
 import googlemaps
 
-key=API_KEY = st.secrets["key=API_KEY"]
+API_KEY = st.secrets["API_KEY"]
+
 gmaps = googlemaps.Client(key=GOOGLE_API_KEY)
 
 
