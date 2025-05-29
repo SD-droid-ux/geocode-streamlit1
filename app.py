@@ -11,7 +11,7 @@ show_street = st.checkbox("Rua", value=True)
 show_neighborhood = st.checkbox("Bairro", value=True)
 show_city = st.checkbox("Cidade", value=True)
 
-input_text = st.text_area("Cole latitudes e longitudes (ex: -5.9396,-35.2512)", height=150)
+input_text = st.text_area("Cole latitudes e longitudes (ex: -5.9396, -35.2512)", height=150)
 
 if st.button("Buscar endereços"):
 
@@ -24,9 +24,13 @@ if st.button("Buscar endereços"):
 
         for i, coord in enumerate(coords_list, start=1):
             try:
-                lat_str, lng_str = coord.split(",")
-                lat = float(lat_str.strip())
-                lng = float(lng_str.strip())
+                parts = coord.split(",")
+                if len(parts) != 2:
+                    st.warning(f"{i}. Entrada inválida: **{coord}**. Use o formato correto: `latitude, longitude` (ex: `-5.9473, -35.2567`)")
+                    continue
+
+                lat = float(parts[0].strip())
+                lng = float(parts[1].strip())
 
                 results = gmaps.reverse_geocode((lat, lng))
 
@@ -41,11 +45,9 @@ if st.button("Buscar endereços"):
                             street = comp["long_name"]
                         if "sublocality" in types or "neighborhood" in types:
                             bairro = comp["long_name"]
-                        # Aqui melhoramos a busca pela cidade:
                         if "locality" in types:
                             cidade = comp["long_name"]
                         elif "administrative_area_level_2" in types and not cidade:
-                            # Pode ser o município
                             cidade = comp["long_name"]
 
                     if street == "" or street.lower() == "unnamed road":
@@ -64,12 +66,11 @@ if st.button("Buscar endereços"):
                         display_address = results[0]["formatted_address"]
 
                     st.write(f"{i}. {display_address}")
-
                 else:
                     st.write(f"{i}. Endereço não encontrado para: {lat}, {lng}")
 
             except Exception as e:
-                st.write(f"{i}. Erro ao processar: {coord} - {e}")
+                st.error(f"{i}. Erro inesperado ao processar: **{coord}**. Erro: {e}")
 
             progress_bar.progress(i / total)
             time.sleep(1)
