@@ -6,7 +6,7 @@ import time
 st.title("Conversor de Coordenadas para Endereço")
 
 # Chave da API do OpenCage
-API_KEY = "SUA_CHAVE_AQUI"
+API_KEY = "6fee265fdab948b1a1d740bead306441"
 
 # Caixa de seleção de partes do endereço
 st.subheader("Escolha o que deseja exibir:")
