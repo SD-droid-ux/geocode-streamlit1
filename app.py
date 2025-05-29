@@ -2,78 +2,68 @@ import streamlit as st
 import requests
 import time
 
-# Título do app
+# --- IMAGEM DE FUNDO ---
+imagem_fundo_url = "https://drive.google.com/uc?export=view&id=1epeU9Mvsqk29YtQZY96IaLSQtoEIgeXf"
+
+pagina_fundo = f"""
+<style>
+    .stApp {{
+        background-image: url("{imagem_fundo_url}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+</style>
+"""
+
+st.markdown(pagina_fundo, unsafe_allow_html=True)
+
+# --- TÍTULO E ENTRADA ---
 st.title("Conversor de Coordenadas para Endereço")
+coordenadas_input = st.text_area("Insira as coordenadas (uma por linha):", height=200)
+api_key = st.secrets["6fee265fdab948b1a1d740bead306441"] if "6fee265fdab948b1a1d740bead306441" in st.secrets else st.text_input("Sua chave API do OpenCage", type="password")
 
-# Chave da API do OpenCage
-API_KEY = "6fee265fdab948b1a1d740bead306441"  # Substitua pela sua chave real
-
-# Caixa de seleção de partes do endereço
-st.subheader("Escolha o que deseja exibir:")
-mostrar_rua = st.checkbox("Rua", value=True)
-mostrar_bairro = st.checkbox("Bairro", value=True)
-mostrar_cidade = st.checkbox("Cidade", value=True)
-
-# Entrada de coordenadas
-st.subheader("Digite as coordenadas (uma por linha):")
-coords_text = st.text_area("Formato: latitude, longitude", height=200)
-
-# Função que faz a requisição para o OpenCage
-def geocode(lat, lon):
-    url = f"https://api.opencagedata.com/geocode/v1/json?q={lat},{lon}&key={API_KEY}&language=pt"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        if data['results']:
-            comp = data['results'][0]['components']
-            partes = []
-
-            if mostrar_rua:
-                rua = comp.get('road', '')
-                if rua.lower() == "unnamed road":
-                    partes.append("Rua Sem Nome")
-                elif rua:
-                    partes.append(rua)
-
-            if mostrar_bairro:
-                partes.append(comp.get('suburb', '') or comp.get('neighbourhood', ''))
-
-            if mostrar_cidade:
-                partes.append(comp.get('city', '') or comp.get('town', '') or comp.get('village', ''))
-
-            return ", ".join([p for p in partes if p])
+# --- FUNÇÃO DE BUSCA ---
+def buscar_endereco(lat, lon):
+    url = f"https://api.opencagedata.com/geocode/v1/json?q={lat}+{lon}&key={api_key}&language=pt&pretty=1"
+    resposta = requests.get(url)
+    if resposta.status_code == 200:
+        dados = resposta.json()
+        if dados["results"]:
+            endereco_completo = dados["results"][0]["formatted"]
+            if "unnamed road" in endereco_completo.lower():
+                endereco_completo = endereco_completo.replace("unnamed road", "rua sem nome").replace("Unnamed Road", "rua sem nome")
+            partes = endereco_completo.split(",")
+            resumo = ", ".join(partes[:6]).strip()
+            return resumo
     return "Endereço não encontrado"
 
-# Quando o botão é clicado
-if st.button("Buscar endereços"):
-    coords = coords_text.strip().split("\n")
-    total = len(coords)
+# --- BOTÃO DE PROCESSAMENTO ---
+if st.button("Buscar Endereços"):
+    linhas = coordenadas_input.strip().split("\n")
+    total = len(linhas)
     resultados = []
+    barra = st.empty()
 
-    # Cria barra e texto de progresso
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+    for i, linha in enumerate(linhas, 1):
+        if "," in linha:
+            try:
+                lat, lon = map(str.strip, linha.split(","))
+                endereco = buscar_endereco(lat, lon)
+                resultados.append(f"{i}. {endereco}")
+            except:
+                resultados.append(f"{i}. Erro ao processar: {linha}")
+        else:
+            resultados.append(f"{i}. Formato inválido: {linha}")
 
-    with st.spinner("Buscando endereços..."):
-        for i, linha in enumerate(coords):
-            lat_lon = linha.split(",")
-            if len(lat_lon) != 2:
-                resultados.append(f"{i+1}. Entrada inválida")
-            else:
-                lat, lon = lat_lon[0].strip(), lat_lon[1].strip()
-                resultado = geocode(lat, lon)
-                resultados.append(f"{i+1}. {resultado}")
-                time.sleep(1.1)
+        barra.text(f"{i}/{total}")
+        time.sleep(1)  # Evita erro 429 (muitos pedidos por segundo)
 
-            # Atualiza barra de progresso
-            progress_bar.progress(int((i + 1) / total * 100))
-            status_text.text(f"{i + 1}/{total}")
+    st.subheader("Endereços encontrados:")
+    for linha in resultados:
+        st.write(linha)
 
-    st.success("Busca finalizada!")
-
-    st.subheader("Resultados:")
-    for r in resultados:
-        st.write(r)
 
 
 
