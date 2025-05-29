@@ -1,79 +1,55 @@
 import streamlit as st
-import requests
+import googlemaps
 import time
 
-# Título do app
-st.title("Conversor de Coordenadas para Endereço")
+# 🔐 Insira sua chave da Google Maps API aqui:
+GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
-# Chave da API do OpenCage
-API_KEY = "6fee265fdab948b1a1d740bead306441"  # Substitua pela sua chave real
+gmaps = googlemaps.Client(key=AIzaSyCi8uWlWbc29rBGm8fjvg-luxvdYGXEICU)
 
-# Caixa de seleção de partes do endereço
-st.subheader("Escolha o que deseja exibir:")
-mostrar_rua = st.checkbox("Rua", value=True)
-mostrar_bairro = st.checkbox("Bairro", value=True)
-mostrar_cidade = st.checkbox("Cidade", value=True)
+st.set_page_config(page_title="Geocodificador Google", layout="centered")
 
-# Entrada de coordenadas
-st.subheader("Digite as coordenadas (uma por linha):")
-coords_text = st.text_area("Formato: latitude, longitude", height=200)
+st.markdown("## 🗺️ Conversor de Latitude/Longitude para Endereço (Google Maps API)")
 
-# Função que faz a requisição para o OpenCage
-def geocode(lat, lon):
-    url = f"https://api.opencagedata.com/geocode/v1/json?q={lat},{lon}&key={API_KEY}&language=pt"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        if data['results']:
-            comp = data['results'][0]['components']
-            partes = []
+lat_lng_input = st.text_area("Insira as coordenadas (uma por linha no formato LAT, LNG):")
 
-            if mostrar_rua:
-                rua = comp.get('road', '')
-                if rua.lower() == "unnamed road":
-                    partes.append("Rua Sem Nome")
-                elif rua:
-                    partes.append(rua)
-
-            if mostrar_bairro:
-                partes.append(comp.get('suburb', '') or comp.get('neighbourhood', ''))
-
-            if mostrar_cidade:
-                partes.append(comp.get('city', '') or comp.get('town', '') or comp.get('village', ''))
-
-            return ", ".join([p for p in partes if p])
-    return "Endereço não encontrado"
-
-# Quando o botão é clicado
 if st.button("Buscar endereços"):
-    coords = coords_text.strip().split("\n")
-    total = len(coords)
-    resultados = []
+    coordenadas = [linha.strip() for linha in lat_lng_input.strip().split("\n") if linha.strip()]
+    
+    if not coordenadas:
+        st.warning("Por favor, insira pelo menos uma coordenada.")
+    else:
+        resultados = []
+        total = len(coordenadas)
+        
+        with st.spinner("Buscando endereços..."):
+            for i, coord in enumerate(coordenadas, 1):
+                try:
+                    lat, lon = map(str.strip, coord.split(","))
+                    lat, lon = float(lat), float(lon)
 
-    # Cria barra e texto de progresso
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+                    resultado = gmaps.reverse_geocode((lat, lon), language="pt-BR")
+                    if resultado:
+                        endereco = resultado[0]["formatted_address"]
+                        if "Unnamed Road" in endereco:
+                            endereco = endereco.replace("Unnamed Road", "rua sem nome")
+                        partes = endereco.split(",")
+                        resumo = ", ".join(partes[:6]).strip()
+                    else:
+                        resumo = "Endereço não encontrado"
 
-    with st.spinner("Buscando endereços..."):
-        for i, linha in enumerate(coords):
-            lat_lon = linha.split(",")
-            if len(lat_lon) != 2:
-                resultados.append(f"{i+1}. Entrada inválida")
-            else:
-                lat, lon = lat_lon[0].strip(), lat_lon[1].strip()
-                resultado = geocode(lat, lon)
-                resultados.append(f"{i+1}. {resultado}")
-                time.sleep(1.1)
+                except Exception as e:
+                    resumo = f"Erro: {str(e)}"
 
-            # Atualiza barra de progresso
-            progress_bar.progress(int((i + 1) / total * 100))
-            status_text.text(f"{i + 1}/{total}")
+                resultados.append(f"{i}. {resumo}")
+                st.markdown(f"🔄 {i}/{total}")
+                time.sleep(1)  # Respeita o rate limit da API
 
-    st.success("Busca finalizada!")
+        st.success("Busca finalizada!")
+        st.markdown("### 📍 Endereços encontrados:")
+        for r in resultados:
+            st.markdown(r)
 
-    st.subheader("Resultados:")
-    for r in resultados:
-        st.write(r)
 
 
 
