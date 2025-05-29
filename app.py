@@ -6,7 +6,7 @@ import time
 st.title("Conversor de Coordenadas para Endereço")
 
 # Chave da API do OpenCage
-API_KEY = "6fee265fdab948b1a1d740bead306441"  # Substitua por sua chave real
+API_KEY = "6fee265fdab948b1a1d740bead306441"  # Substitua pela sua chave real
 
 # Caixa de seleção de partes do endereço
 st.subheader("Escolha o que deseja exibir:")
@@ -31,7 +31,7 @@ def geocode(lat, lon):
             if mostrar_rua:
                 rua = comp.get('road', '')
                 if rua.lower() == "unnamed road":
-                    partes.append("rua sem nome")
+                    partes.append("Rua Sem Nome")
                 elif rua:
                     partes.append(rua)
 
@@ -50,7 +50,7 @@ if st.button("Buscar endereços"):
     total = len(coords)
     resultados = []
 
-    # Cria a barra de progresso
+    # Cria barra e texto de progresso
     progress_bar = st.progress(0)
     status_text = st.empty()
 
@@ -65,15 +65,15 @@ if st.button("Buscar endereços"):
                 resultados.append(f"{i+1}. {resultado}")
                 time.sleep(1.1)
 
-            # Atualiza a barra de progresso
-            progress = int((i + 1) / total * 100)
-            progress_bar.progress(progress)
-            status_text.text(f"{progress}% concluído")
+            # Atualiza barra de progresso
+            progress_bar.progress(int((i + 1) / total * 100))
+            status_text.text(f"{i + 1}/{total}")
 
     st.success("Busca finalizada!")
 
     st.subheader("Resultados:")
     for r in resultados:
         st.write(r)
+
 
 
