@@ -3,9 +3,9 @@ import googlemaps
 import time
 
 # 🔐 Insira sua chave da Google Maps API aqui:
-GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
+GOOGLE_API_KEY = st.secrets[AIzaSyCi8uWlWbc29rBGm8fjvg-luxvdYGXEICU]
 
-gmaps = googlemaps.Client(key=AIzaSyCi8uWlWbc29rBGm8fjvg-luxvdYGXEICU)
+gmaps = googlemaps.Client(key=GOOGLE_API_KEY)
 
 st.set_page_config(page_title="Geocodificador Google", layout="centered")
 
@@ -49,7 +49,3 @@ if st.button("Buscar endereços"):
         st.markdown("### 📍 Endereços encontrados:")
         for r in resultados:
             st.markdown(r)
-
-
-
-
