@@ -3,7 +3,7 @@ import googlemaps
 import time
 
 # 🔐 Insira sua chave da Google Maps API aqui:
-GOOGLE_API_KEY = st.secrets[AIzaSyCi8uWlWbc29rBGm8fjvg-luxvdYGXEICU]
+GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
 gmaps = googlemaps.Client(key=GOOGLE_API_KEY)
 
