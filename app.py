@@ -1,50 +1,52 @@
 import streamlit as st
 import googlemaps
+import time
 
-API_KEY = st.secrets["API_KEY"]
+# Pega a chave da API Google dos Secrets do Streamlit
+GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
+# Cria cliente do Google Maps
 gmaps = googlemaps.Client(key=GOOGLE_API_KEY)
 
+st.title("Geocodificação reversa com Google Maps API")
 
-st.set_page_config(page_title="Geocodificador Google", layout="centered")
-
-st.markdown("## 🗺️ Conversor de Latitude/Longitude para Endereço (Google Maps API)")
-
-lat_lng_input = st.text_area("Insira as coordenadas (uma por linha no formato LAT, LNG):")
+# Campo para digitar latitudes e longitudes separados por vírgula ou linha
+input_text = st.text_area("Cole latitudes e longitudes (ex: -5.9396,-35.2512)", height=150)
 
 if st.button("Buscar endereços"):
-    coordenadas = [linha.strip() for linha in lat_lng_input.strip().split("\n") if linha.strip()]
-    
-    if not coordenadas:
-        st.warning("Por favor, insira pelo menos uma coordenada.")
+
+    if not input_text.strip():
+        st.error("Por favor, insira pelo menos uma latitude e longitude.")
     else:
-        resultados = []
-        total = len(coordenadas)
-        
-        with st.spinner("Buscando endereços..."):
-            for i, coord in enumerate(coordenadas, 1):
-                try:
-                    lat, lon = map(str.strip, coord.split(","))
-                    lat, lon = float(lat), float(lon)
+        # Processa as linhas
+        coords_list = input_text.strip().split('\n')
+        total = len(coords_list)
 
-                    resultado = gmaps.reverse_geocode((lat, lon), language="pt-BR")
-                    if resultado:
-                        endereco = resultado[0]["formatted_address"]
-                        if "Unnamed Road" in endereco:
-                            endereco = endereco.replace("Unnamed Road", "rua sem nome")
-                        partes = endereco.split(",")
-                        resumo = ", ".join(partes[:6]).strip()
-                    else:
-                        resumo = "Endereço não encontrado"
+        for i, coord in enumerate(coords_list, start=1):
+            st.write(f"{i}/{total}")
+            try:
+                lat_str, lng_str = coord.split(",")
+                lat = float(lat_str.strip())
+                lng = float(lng_str.strip())
 
-                except Exception as e:
-                    resumo = f"Erro: {str(e)}"
+                # Faz geocodificação reversa usando Google Maps API
+                results = gmaps.reverse_geocode((lat, lng))
 
-                resultados.append(f"{i}. {resumo}")
-                st.markdown(f"🔄 {i}/{total}")
-                time.sleep(1)  # Respeita o rate limit da API
+                if results:
+                    # Pega o endereço formatado do primeiro resultado
+                    address = results[0]["formatted_address"]
 
-        st.success("Busca finalizada!")
-        st.markdown("### 📍 Endereços encontrados:")
-        for r in resultados:
-            st.markdown(r)
+                    # Se aparecer "Unnamed Road", substitui por "Rua sem nome"
+                    if "Unnamed Road" in address:
+                        address = address.replace("Unnamed Road", "Rua sem nome")
+
+                    st.write(f"{i}. {address}")
+
+                else:
+                    st.write(f"{i}. Endereço não encontrado para: {lat}, {lng}")
+
+            except Exception as e:
+                st.write(f"{i}. Erro ao processar: {coord} - {e}")
+
+            # Pequena pausa para evitar limite de requisições (Rate Limit)
+            time.sleep(1)
