@@ -6,7 +6,7 @@ import time
 st.title("Conversor de Coordenadas para Endereço")
 
 # Chave da API do OpenCage
-API_KEY = "6fee265fdab948b1a1d740bead306441"
+API_KEY = "6fee265fdab948b1a1d740bead306441"  # Substitua por sua chave real
 
 # Caixa de seleção de partes do endereço
 st.subheader("Escolha o que deseja exibir:")
@@ -27,31 +27,53 @@ def geocode(lat, lon):
         if data['results']:
             comp = data['results'][0]['components']
             partes = []
+
             if mostrar_rua:
-                partes.append(comp.get('road', ''))
+                rua = comp.get('road', '')
+                if rua.lower() == "unnamed road":
+                    partes.append("rua sem nome")
+                elif rua:
+                    partes.append(rua)
+
             if mostrar_bairro:
                 partes.append(comp.get('suburb', '') or comp.get('neighbourhood', ''))
+
             if mostrar_cidade:
                 partes.append(comp.get('city', '') or comp.get('town', '') or comp.get('village', ''))
+
             return ", ".join([p for p in partes if p])
     return "Endereço não encontrado"
 
 # Quando o botão é clicado
 if st.button("Buscar endereços"):
     coords = coords_text.strip().split("\n")
+    total = len(coords)
     resultados = []
+
+    # Cria a barra de progresso
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
     with st.spinner("Buscando endereços..."):
         for i, linha in enumerate(coords):
             lat_lon = linha.split(",")
             if len(lat_lon) != 2:
                 resultados.append(f"{i+1}. Entrada inválida")
-                continue
-            lat, lon = lat_lon[0].strip(), lat_lon[1].strip()
-            resultado = geocode(lat, lon)
-            resultados.append(f"{i+1}. {resultado}")
-            time.sleep(1.1)  # evita erro 429 (limite de requisições)
+            else:
+                lat, lon = lat_lon[0].strip(), lat_lon[1].strip()
+                resultado = geocode(lat, lon)
+                resultados.append(f"{i+1}. {resultado}")
+                time.sleep(1.1)
+
+            # Atualiza a barra de progresso
+            progress = int((i + 1) / total * 100)
+            progress_bar.progress(progress)
+            status_text.text(f"{progress}% concluído")
+
+    st.success("Busca finalizada!")
 
     st.subheader("Resultados:")
     for r in resultados:
         st.write(r)
+
 
