@@ -11,7 +11,7 @@ show_street = st.checkbox("Rua", value=True)
 show_neighborhood = st.checkbox("Bairro", value=True)
 show_city = st.checkbox("Cidade", value=True)
 
-input_text = st.text_area("Cole latitudes e longitudes (ex: -5.9396, -35.2512)", height=150)
+input_text = st.text_area("Cole as coordenadas (ex: -5.9396, -35.2512 ou -5.9396 -35.2512)", height=150)
 
 if st.button("Buscar endereços"):
 
@@ -24,9 +24,14 @@ if st.button("Buscar endereços"):
 
         for i, coord in enumerate(coords_list, start=1):
             try:
-                parts = coord.split(",")
+                # Tentar identificar separadores
+                if "," in coord:
+                    parts = coord.split(",")
+                else:
+                    parts = coord.split()
+
                 if len(parts) != 2:
-                    st.warning(f"{i}. Entrada inválida: **{coord}**. Use o formato correto: `latitude, longitude` (ex: `-5.9473, -35.2567`)")
+                    st.warning(f"{i}. Entrada inválida: **{coord}**. Use o formato: `latitude, longitude` ou `latitude longitude`.")
                     continue
 
                 lat = float(parts[0].strip())
